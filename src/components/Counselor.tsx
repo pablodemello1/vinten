@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -19,6 +18,7 @@ export default function Counselor({ userGoal }: { userGoal: string }) {
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [conversationId, setConversationId] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const quickActions = [
@@ -47,51 +47,51 @@ export default function Counselor({ userGoal }: { userGoal: string }) {
     setIsLoading(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-      // We pass the last 10 messages for context
-      const historyContext = messages.slice(-10).map(m => `${m.role === 'user' ? 'Usuario' : 'Vintén'}: ${m.text}`).join('\n');
+      const apiKey = process.env.DIFY_API_KEY || 'app-DNdgJUyMHZdIMWtKzFhuIz0k';
+      const baseUrl = 'https://api.dify.ai/v1';
 
-      const prompt = `Eres Vintén, el mejor consejero financiero para adolescentes en Uruguay. 
-      Hablas con jerga uruguaya joven (che, bo, plata, vintén, al toque, de menos, etc.) pero de forma experta y cercana.
-      
-      CONTEXTO DEL USUARIO:
-      - Su meta actual es: "${userGoal || 'Ahorrar para el futuro'}".
-      
-      CATÁLOGO DE LA ACADEMIA (Podes recomendar estos temas):
-      - Módulo 1 (ABC Economía): Rol del Banco Central (BCU), cómo se emite el peso uruguayo.
-      - Módulo 2 (Presupuesto): Gastos hormiga, Necesidad vs Deseo, cómo armar un presupuesto.
-      - Módulo 3 (Crédito): Tarjetas, peligros de las cuotas, recargos e intereses.
-      - Módulo 4 (Ahorro/Inversión): Ahorro grupal, el poder del interés compuesto, ahorrar en UI (Unidades Indexadas).
+      const payload: Record<string, any> = {
+        inputs: {
+          user_goal: userGoal || 'Ahorrar para el futuro'
+        },
+        query: textToSend.trim(),
+        response_mode: 'blocking',
+        user: 'vinten_user'
+      };
 
-      REGLAS DE RESPUESTA:
-      1. Sé extremadamente práctico. Si preguntan por cuotas, explica el recargo.
-      2. Usa emojis sutilmente.
-      3. No des respuestas gigantes. Divide en párrafos cortos.
-      4. Menciona siempre cómo su decisión afecta su meta: "${userGoal}".
-      5. AL FINAL DE CADA RESPUESTA: Recomienda SIEMPRE una lección o módulo específico de la "Academia Vintén" que le sirva para profundizar lo que preguntó. 
-         - Ejemplo: "Si querés saber más, tirate a la Academia y fichate el Módulo 3 sobre el laberinto de las cuotas, te va a servir pila."
-      
-      HISTORIAL RECIENTE:
-      ${historyContext}
-      
-      PREGUNTA ACTUAL: ${textToSend}
-      
-      RESPUESTA DE VINTÉN (en Markdown):`;
+      if (conversationId) {
+        payload.conversation_id = conversationId;
+      }
 
-      const response = await ai.models.generateContent({
-        model: 'models/gemini-flash-latest',
-        contents: prompt,
+      const response = await fetch(`${baseUrl}/chat-messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Dify API error (${response.status}): ${errText}`);
+      }
+
+      const data = await response.json();
+
+      if (data.conversation_id) {
+        setConversationId(data.conversation_id);
+      }
 
       const modelMsg: Message = {
         role: 'model',
-        text: response.text || 'Mmm, se me mezclaron los cables con el tipo de cambio. ¿Me repetís?',
+        text: data.answer || 'Mmm, se me mezclaron los cables con el tipo de cambio. ¿Me repetís?',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
 
       setMessages(prev => [...prev, modelMsg]);
     } catch (error) {
-      console.error(error);
+      console.error('[Dify API Error]:', error);
       setMessages(prev => [...prev, {
         role: 'model',
         text: '¡Pa! Se me cortó el chorro de datos. Probá de nuevo en un toque.',
