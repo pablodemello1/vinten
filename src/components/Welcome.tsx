@@ -68,10 +68,8 @@ export default function Welcome({ onGoalSet, onNavigate }: WelcomeProps) {
   };
 
   const features = [
-    { id: 'dashboard', icon: 'account_balance', title: 'Mi Bóveda', desc: 'Controlá tu saldo y salud financiera.' },
-    { id: 'tracker', icon: 'receipt_long', title: 'Escáner', desc: 'Registrá gastos y recibí consejos.' },
     { id: 'course', icon: 'play_lesson', title: 'Curso', desc: 'Formación financiera estructurada.' },
-    { id: 'academy', icon: 'school', title: 'Academia', desc: 'Aprendé finanzas a tu ritmo.' },
+    { id: 'academy', icon: 'school', title: 'Ruta de Aprendizaje', desc: 'Aprendé finanzas a tu ritmo.' },
     { id: 'counselor', icon: 'forum', title: 'Consejero', desc: 'Preguntame lo que quieras 24/7.' },
   ];
 

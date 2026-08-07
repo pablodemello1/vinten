@@ -11,8 +11,8 @@ export default function Academy() {
   return (
     <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar">
       <header className="mb-10 text-center">
-        <h2 className="text-3xl font-black text-text-main mb-2">La Academia Vintén</h2>
-        <p className="text-text-muted font-medium">Tu ruta de aprendizaje financiero.</p>
+        <h2 className="text-3xl font-black text-text-main mb-2">Ruta de Aprendizaje Vintén</h2>
+        <p className="text-text-muted font-medium">Tu camino de educación financiera.</p>
       </header>
 
       <div className="max-w-md mx-auto relative py-10">

@@ -8,8 +8,8 @@ export default defineConfig(({mode}) => {
   return {
     plugins: [react(), tailwindcss()],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.DIFY_API_KEY': JSON.stringify(env.DIFY_API_KEY || 'app-DNdgJUyMHZdIMWtKzFhuIz0k'),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || process.env.GEMINI_API_KEY || 'AIzaSyC8muSiGAdk1oBpE_gb1yFGmYNAPy7bRlY'),
+      'process.env.DIFY_API_KEY': JSON.stringify(env.DIFY_API_KEY || process.env.DIFY_API_KEY || 'app-DNdgJUyMHZdIMWtKzFhuIz0k'),
     },
     resolve: {
       alias: {

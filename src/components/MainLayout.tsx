@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import Dashboard from './Dashboard';
-import ExpenseTracker from './ExpenseTracker';
-import Academy from './Academy';
+import Assistant from './Assistant';
 import Course from './Course';
-import Counselor from './Counselor';
-import Welcome from './Welcome';
+import Academy from './Academy';
+import RecommendedMaterials from './RecommendedMaterials';
 import Logo from './Logo';
 
 interface MainLayoutProps {
@@ -13,16 +11,20 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ userGoal, setUserGoal }: MainLayoutProps) {
-  const [currentView, setCurrentView] = useState<'welcome' | 'dashboard' | 'tracker' | 'academy' | 'course' | 'counselor'>('welcome');
+  const [currentView, setCurrentView] = useState<'assistant' | 'course' | 'academy' | 'materials'>('assistant');
+  const [initialAssistantQuery, setInitialAssistantQuery] = useState<string>('');
 
   const navItems = [
-    { id: 'welcome', icon: 'waving_hand', label: 'Bienvenida' },
-    { id: 'dashboard', icon: 'account_balance', label: 'Mi Bóveda' },
-    { id: 'tracker', icon: 'receipt_long', label: 'Escáner' },
-    { id: 'academy', icon: 'school', label: 'Academia' },
+    { id: 'assistant', icon: 'smart_toy', label: 'Asistente Vintén' },
     { id: 'course', icon: 'play_lesson', label: 'Curso' },
-    { id: 'counselor', icon: 'forum', label: 'Consejero' },
+    { id: 'academy', icon: 'school', label: 'Ruta de Aprendizaje' },
+    { id: 'materials', icon: 'auto_stories', label: 'Materiales recomendados' },
   ] as const;
+
+  const handleDiscussResource = (queryPrompt: string) => {
+    setInitialAssistantQuery(queryPrompt);
+    setCurrentView('assistant');
+  };
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -53,12 +55,20 @@ export default function MainLayout({ userGoal, setUserGoal }: MainLayoutProps) {
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden relative pb-16 md:pb-0">
-        {currentView === 'welcome' && <Welcome onGoalSet={setUserGoal} onNavigate={setCurrentView} />}
-        {currentView === 'dashboard' && <Dashboard userGoal={userGoal} />}
-        {currentView === 'tracker' && <ExpenseTracker />}
-        {currentView === 'academy' && <Academy />}
+        {currentView === 'assistant' && (
+          <Assistant
+            userGoal={userGoal}
+            setUserGoal={setUserGoal}
+            onNavigate={setCurrentView}
+            initialQuery={initialAssistantQuery}
+            clearInitialQuery={() => setInitialAssistantQuery('')}
+          />
+        )}
         {currentView === 'course' && <Course />}
-        {currentView === 'counselor' && <Counselor userGoal={userGoal} />}
+        {currentView === 'academy' && <Academy />}
+        {currentView === 'materials' && (
+          <RecommendedMaterials onDiscussResource={handleDiscussResource} />
+        )}
       </main>
 
       {/* Mobile Nav */}

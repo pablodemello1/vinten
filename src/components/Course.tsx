@@ -239,7 +239,7 @@ export default function Course() {
       {/* Sidebar de Módulos */}
       <div className="w-full md:w-80 bg-surface border-r border-border flex flex-col overflow-y-auto custom-scrollbar flex-shrink-0">
         <div className="p-6 border-b border-border bg-primary/5">
-          <h2 className="text-2xl font-black text-primary">Academia Vintén</h2>
+          <h2 className="text-2xl font-black text-primary">Ruta de Aprendizaje Vintén</h2>
           <p className="text-sm text-text-muted">Programa de Educación Financiera</p>
         </div>
         <div className="flex-1 p-4 space-y-4">
