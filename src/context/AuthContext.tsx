@@ -35,6 +35,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
   const [loading, setLoading] = useState<boolean>(true);
 
+  const resetStaleSession = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn('Error al limpiar sesión caducada:', e);
+    }
+    setUser(null);
+    setProfile(null);
+    setIsGuest(false);
+    localStorage.removeItem(GUEST_STORAGE_KEY);
+  };
+
   const fetchProfile = async (userId: string, email: string) => {
     try {
       const { data, error } = await supabase
@@ -59,36 +71,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } catch (err) {
       console.error('Error al cargar perfil:', err);
+      // Fallback para evitar bloqueo si la tabla profiles tiene restricciones de RLS
+      setProfile({
+        id: userId,
+        email: email,
+        full_name: email.split('@')[0],
+      });
     }
   };
 
   useEffect(() => {
-    // 1. Obtener la sesión actual al cargar
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUser(session.user);
-        setIsGuest(false);
-        localStorage.removeItem(GUEST_STORAGE_KEY);
-        fetchProfile(session.user.id, session.user.email || '');
-      }
-      setLoading(false);
-    });
+    let isMounted = true;
 
-    // 2. Escuchar cambios de autenticación
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        setIsGuest(false);
-        localStorage.removeItem(GUEST_STORAGE_KEY);
-        await fetchProfile(session.user.id, session.user.email || '');
-      } else {
-        setUser(null);
-        setProfile(null);
+    const initAuth = async () => {
+      try {
+        // 1. Obtener la sesión actual al cargar
+        const { data, error } = await supabase.auth.getSession();
+
+        if (error) {
+          console.warn('Sesión caducada o inválida en Supabase:', error.message);
+          await resetStaleSession();
+        } else if (data?.session?.user) {
+          if (isMounted) {
+            setUser(data.session.user);
+            setIsGuest(false);
+            localStorage.removeItem(GUEST_STORAGE_KEY);
+          }
+          await fetchProfile(data.session.user.id, data.session.user.email || '');
+        } else {
+          if (isMounted) {
+            setUser(null);
+            setProfile(null);
+          }
+        }
+      } catch (err) {
+        console.error('Excepción cargando la sesión inicial:', err);
+        await resetStaleSession();
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
+    };
+
+    initAuth();
+
+    // 2. Escuchar cambios de autenticación (ej: token caducado, signout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        if (isMounted) {
+          setUser(null);
+          setProfile(null);
+        }
+      } else if (session?.user) {
+        if (isMounted) {
+          setUser(session.user);
+          setIsGuest(false);
+          localStorage.removeItem(GUEST_STORAGE_KEY);
+        }
+        await fetchProfile(session.user.id, session.user.email || '');
+      }
+      if (isMounted) {
+        setLoading(false);
+      }
     });
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -168,15 +217,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     setLoading(true);
-    if (user) {
-      await logActivity('user_logout', 'Cierre de sesión del usuario');
-      await supabase.auth.signOut();
+    try {
+      if (user) {
+        await logActivity('user_logout', 'Cierre de sesión del usuario');
+        await supabase.auth.signOut();
+      }
+    } catch (err) {
+      console.warn('Error durante el cierre de sesión en Supabase:', err);
+    } finally {
+      setUser(null);
+      setProfile(null);
+      setIsGuest(false);
+      localStorage.removeItem(GUEST_STORAGE_KEY);
+      setLoading(false);
     }
-    setUser(null);
-    setProfile(null);
-    setIsGuest(false);
-    localStorage.removeItem(GUEST_STORAGE_KEY);
-    setLoading(false);
   };
 
   const refreshProfile = async () => {
