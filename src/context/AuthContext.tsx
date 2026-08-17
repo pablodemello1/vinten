@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { logActivity } from '../lib/activityLogger';
+import { logUserEvent } from '../lib/activityLogger';
 
 export interface UserProfile {
   id: string;
@@ -98,11 +98,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             localStorage.removeItem(GUEST_STORAGE_KEY);
           }
           await fetchProfile(data.session.user.id, data.session.user.email || '');
+          logUserEvent('visita_app', { modo: 'autenticado', email: data.session.user.email });
         } else {
           if (isMounted) {
             setUser(null);
             setProfile(null);
           }
+          logUserEvent('visita_app', { modo: isGuest ? 'invitado' : 'anonimo' });
         }
       } catch (err) {
         console.error('Excepción cargando la sesión inicial:', err);
@@ -159,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem(GUEST_STORAGE_KEY);
 
       if (data.user) {
-        await logActivity('user_login', `Inicio de sesión con email ${email}`, { email });
+        await logUserEvent('inicio_sesion', { email, metodo: 'email' });
       }
 
       setLoading(false);
@@ -198,7 +200,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           },
         ]);
 
-        await logActivity('user_signup', `Registro de nuevo usuario ${email}`, { email, fullName });
+        await logUserEvent('registro_usuario', { email, fullName: fullName || email.split('@')[0], metodo: 'email' });
       }
 
       setLoading(false);
@@ -212,14 +214,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const continueAsGuest = () => {
     setIsGuest(true);
     localStorage.setItem(GUEST_STORAGE_KEY, 'true');
-    logActivity('guest_login', 'Acceso en modo invitado');
+    logUserEvent('inicio_sesion_invitado', { modo: 'invitado' });
   };
 
   const signOut = async () => {
     setLoading(true);
     try {
       if (user) {
-        await logActivity('user_logout', 'Cierre de sesión del usuario');
+        await logUserEvent('cierre_sesion', { email: user.email });
         await supabase.auth.signOut();
       }
     } catch (err) {

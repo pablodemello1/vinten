@@ -86,3 +86,33 @@ CREATE INDEX IF NOT EXISTS idx_user_activities_user_id ON public.user_activities
 CREATE INDEX IF NOT EXISTS idx_user_activities_guest_session ON public.user_activities(guest_session_id);
 CREATE INDEX IF NOT EXISTS idx_user_activities_type ON public.user_activities(activity_type);
 CREATE INDEX IF NOT EXISTS idx_user_activities_created_at ON public.user_activities(created_at DESC);
+
+
+-- 4. Tabla de Eventos de Usuario (eventos_usuario)
+CREATE TABLE IF NOT EXISTS public.eventos_usuario (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NULL,
+  tipo_evento TEXT NOT NULL,
+  detalles JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Habilitar RLS en public.eventos_usuario
+ALTER TABLE public.eventos_usuario ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de RLS para eventos_usuario
+DROP POLICY IF EXISTS "Permitir inserción de eventos a todos (usuarios e invitados)" ON public.eventos_usuario;
+CREATE POLICY "Permitir inserción de eventos a todos (usuarios e invitados)"
+  ON public.eventos_usuario FOR INSERT
+  WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Los usuarios autenticados pueden ver sus propios eventos" ON public.eventos_usuario;
+CREATE POLICY "Los usuarios autenticados pueden ver sus propios eventos"
+  ON public.eventos_usuario FOR SELECT
+  USING (auth.uid() = user_id OR user_id IS NULL);
+
+-- Índices de optimización para consultas de eventos
+CREATE INDEX IF NOT EXISTS idx_eventos_usuario_user_id ON public.eventos_usuario(user_id);
+CREATE INDEX IF NOT EXISTS idx_eventos_usuario_tipo ON public.eventos_usuario(tipo_evento);
+CREATE INDEX IF NOT EXISTS idx_eventos_usuario_created_at ON public.eventos_usuario(created_at DESC);
+

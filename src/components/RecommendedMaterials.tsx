@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logUserEvent } from '../lib/activityLogger';
 
 export interface MaterialItem {
   id: string;
@@ -203,7 +204,15 @@ export default function RecommendedMaterials({ onDiscussResource }: RecommendedM
 
               {/* Consult Button with Asistente Vintén */}
               <button
-                onClick={() => onDiscussResource(item.prompt)}
+                onClick={() => {
+                  logUserEvent('interaccion_material_recomendado', {
+                    material_id: item.id,
+                    material_titulo: item.title,
+                    categoria: item.category,
+                    prompt: item.prompt,
+                  });
+                  onDiscussResource(item.prompt);
+                }}
                 className="w-full bg-primary/10 hover:bg-primary text-primary hover:text-surface font-extrabold text-xs md:text-sm py-3 px-4 rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer border border-primary/20 hover:border-transparent group"
               >
                 <span className="material-symbols-outlined text-base group-hover:scale-110 transition-transform">smart_toy</span>

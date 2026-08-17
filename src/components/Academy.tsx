@@ -1,4 +1,5 @@
 import React from 'react';
+import { logUserEvent } from '../lib/activityLogger';
 
 export default function Academy() {
   const topics = [
@@ -7,6 +8,14 @@ export default function Academy() {
     { id: 3, title: 'Inflación para principiantes', status: 'locked', icon: 'trending_up' },
     { id: 4, title: 'El misterio del interés compuesto', status: 'locked', icon: 'monitoring' },
   ];
+
+  const handleTopicClick = (topic: typeof topics[0]) => {
+    logUserEvent('interaccion_modulo_ruta', {
+      tema_id: topic.id,
+      tema_titulo: topic.title,
+      estado: topic.status,
+    });
+  };
 
   return (
     <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar">
@@ -24,7 +33,10 @@ export default function Academy() {
             const isEven = index % 2 === 0;
             return (
               <div key={topic.id} className={`flex items-center justify-center relative ${isEven ? 'left-[-40px]' : 'left-[40px]'}`}>
-                <div className="flex flex-col items-center group cursor-pointer">
+                <div
+                  onClick={() => handleTopicClick(topic)}
+                  className="flex flex-col items-center group cursor-pointer"
+                >
                   <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center shadow-lg transition-transform group-hover:scale-110 ${
                     topic.status === 'completed' ? 'bg-secondary border-secondary text-surface' :
                     topic.status === 'active' ? 'bg-primary border-primary text-surface ring-4 ring-primary/30' :

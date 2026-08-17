@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { logUserEvent } from '../lib/activityLogger';
 
 interface Lesson {
   id: string;
@@ -233,6 +234,37 @@ const courseData: Module[] = [
 export default function Course() {
   const [activeModuleId, setActiveModuleId] = useState<string | null>('m1');
   const [activeLesson, setActiveLesson] = useState<Lesson | null>(courseData[0].lessons[0]);
+  const [completedLessonIds, setCompletedLessonIds] = useState<string[]>(['l1']);
+
+  const handleSelectLesson = (module: Module, lesson: Lesson) => {
+    setActiveLesson(lesson);
+    logUserEvent('interaccion_leccion', {
+      modulo_id: module.id,
+      modulo_titulo: module.title,
+      leccion_id: lesson.id,
+      leccion_titulo: lesson.title,
+      tipo_contenido: lesson.type,
+    });
+  };
+
+  const handleCompleteLesson = (lesson: Lesson) => {
+    if (!completedLessonIds.includes(lesson.id)) {
+      setCompletedLessonIds(prev => [...prev, lesson.id]);
+    }
+    logUserEvent('leccion_completada', {
+      leccion_id: lesson.id,
+      leccion_titulo: lesson.title,
+      tipo_contenido: lesson.type,
+    });
+  };
+
+  const handlePlayExercise = (lesson: Lesson) => {
+    logUserEvent('interaccion_ejercicio', {
+      leccion_id: lesson.id,
+      leccion_titulo: lesson.title,
+      ejercicio_titulo: lesson.content?.exerciseTitle || 'Ejercicio',
+    });
+  };
 
   return (
     <div className="flex flex-col h-full bg-background md:flex-row overflow-hidden">
@@ -258,27 +290,30 @@ export default function Course() {
 
               {activeModuleId === module.id && (
                 <div className="pl-2 space-y-1 animate-in fade-in slide-in-from-top-2">
-                  {module.lessons.map(lesson => (
-                    <button
-                      key={lesson.id}
-                      onClick={() => setActiveLesson(lesson)}
-                      className={`w-full flex items-center gap-4 p-3 rounded-xl text-sm transition-all text-left cursor-pointer ${activeLesson?.id === lesson.id
-                          ? 'bg-primary text-surface shadow-lg shadow-primary/20 scale-[1.02]'
-                          : 'text-text-muted hover:bg-background'
-                        }`}
-                    >
-                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${activeLesson?.id === lesson.id ? 'bg-surface/20' : 'bg-background'}`}>
-                        <span className="material-symbols-outlined text-lg">
-                          {lesson.type === 'video' ? 'play_arrow' : lesson.type === 'text' ? 'menu_book' : 'sports_esports'}
-                        </span>
-                      </div>
-                      <div className="flex-1 overflow-hidden">
-                        <p className="font-bold truncate">{lesson.title}</p>
-                        <p className="text-[10px] opacity-80">{lesson.duration}</p>
-                      </div>
-                      {lesson.completed && <span className="material-symbols-outlined text-secondary text-base">verified</span>}
-                    </button>
-                  ))}
+                  {module.lessons.map(lesson => {
+                    const isCompleted = lesson.completed || completedLessonIds.includes(lesson.id);
+                    return (
+                      <button
+                        key={lesson.id}
+                        onClick={() => handleSelectLesson(module, lesson)}
+                        className={`w-full flex items-center gap-4 p-3 rounded-xl text-sm transition-all text-left cursor-pointer ${activeLesson?.id === lesson.id
+                            ? 'bg-primary text-surface shadow-lg shadow-primary/20 scale-[1.02]'
+                            : 'text-text-muted hover:bg-background'
+                          }`}
+                      >
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${activeLesson?.id === lesson.id ? 'bg-surface/20' : 'bg-background'}`}>
+                          <span className="material-symbols-outlined text-lg">
+                            {lesson.type === 'video' ? 'play_arrow' : lesson.type === 'text' ? 'menu_book' : 'sports_esports'}
+                          </span>
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          <p className="font-bold truncate">{lesson.title}</p>
+                          <p className="text-[10px] opacity-80">{lesson.duration}</p>
+                        </div>
+                        {isCompleted && <span className="material-symbols-outlined text-secondary text-base">verified</span>}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -392,7 +427,10 @@ export default function Course() {
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md">
-                    <button className="bg-primary text-surface px-8 py-5 rounded-[24px] font-black hover:bg-primary/90 transition-all shadow-xl shadow-primary/30 cursor-pointer flex items-center justify-center gap-3 group">
+                    <button
+                      onClick={() => handlePlayExercise(activeLesson)}
+                      className="bg-primary text-surface px-8 py-5 rounded-[24px] font-black hover:bg-primary/90 transition-all shadow-xl shadow-primary/30 cursor-pointer flex items-center justify-center gap-3 group"
+                    >
                       Jugar Ahora
                       <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">rocket_launch</span>
                     </button>
@@ -407,8 +445,12 @@ export default function Course() {
                 <button className="text-text-muted font-black hover:text-primary transition-colors flex items-center gap-2 text-sm cursor-pointer px-6 py-2 rounded-full hover:bg-primary/5">
                   <span className="material-symbols-outlined">west</span> Anterior
                 </button>
-                <button className="bg-secondary text-surface px-8 py-4 rounded-2xl font-black hover:bg-secondary/90 transition-all flex items-center gap-3 text-sm cursor-pointer shadow-lg shadow-secondary/30 scale-105 hover:scale-110 active:scale-95">
-                  Lección Completada <span className="material-symbols-outlined font-black">done_all</span>
+                <button
+                  onClick={() => handleCompleteLesson(activeLesson)}
+                  className="bg-secondary text-surface px-8 py-4 rounded-2xl font-black hover:bg-secondary/90 transition-all flex items-center gap-3 text-sm cursor-pointer shadow-lg shadow-secondary/30 scale-105 hover:scale-110 active:scale-95"
+                >
+                  {completedLessonIds.includes(activeLesson.id) ? 'Lección Completada ✓' : 'Lección Completada'}
+                  <span className="material-symbols-outlined font-black">done_all</span>
                 </button>
               </div>
             </div>

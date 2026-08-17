@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
 import Logo from './Logo';
+import { logUserEvent } from '../lib/activityLogger';
 
 interface Message {
   role: 'model' | 'user';
@@ -69,6 +70,13 @@ export default function Assistant({ userGoal, setUserGoal, onNavigate, initialQu
     setInput('');
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
+
+    // Registrar consulta al Tutor AI en Supabase
+    logUserEvent('consulta_tutor_ai', {
+      texto_consulta: textToSend.trim(),
+      user_goal: userGoal || null,
+      conversation_id: conversationId || null,
+    });
 
     try {
       const apiKey = process.env.DIFY_API_KEY || 'app-DNdgJUyMHZdIMWtKzFhuIz0k';

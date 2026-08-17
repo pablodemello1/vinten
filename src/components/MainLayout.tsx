@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { logActivity } from '../lib/activityLogger';
+import { logUserEvent } from '../lib/activityLogger';
 import Assistant from './Assistant';
 import Course from './Course';
 import Academy from './Academy';
@@ -25,7 +25,7 @@ export default function MainLayout({ userGoal, setUserGoal }: MainLayoutProps) {
   ] as const;
 
   useEffect(() => {
-    logActivity('view_page', `Navegación a ${currentView}`, { view: currentView });
+    logUserEvent('visita_pantalla', { vista: currentView });
   }, [currentView]);
 
   const handleDiscussResource = (queryPrompt: string) => {
