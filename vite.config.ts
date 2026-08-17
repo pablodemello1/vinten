@@ -10,6 +10,10 @@ export default defineConfig(({mode}) => {
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || process.env.GEMINI_API_KEY || 'AIzaSyC8muSiGAdk1oBpE_gb1yFGmYNAPy7bRlY'),
       'process.env.DIFY_API_KEY': JSON.stringify(env.DIFY_API_KEY || process.env.DIFY_API_KEY || 'app-DNdgJUyMHZdIMWtKzFhuIz0k'),
+      'process.env.VITE_SUPABASE_URL': JSON.stringify(env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || 'https://ynntsloaxuehizgbqenr.supabase.co'),
+      'process.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_AiiQWTfqM8HYOv6m7YSgIg_pBff-SWL'),
+      'process.env.SUPABASE_URL': JSON.stringify(env.SUPABASE_URL || process.env.SUPABASE_URL || 'https://ynntsloaxuehizgbqenr.supabase.co'),
+      'process.env.SUPABASE_ANON_KEY': JSON.stringify(env.SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || 'sb_publishable_AiiQWTfqM8HYOv6m7YSgIg_pBff-SWL'),
     },
     resolve: {
       alias: {
